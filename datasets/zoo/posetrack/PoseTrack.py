@@ -93,13 +93,20 @@ class PoseTrack(VideoDataset):
         self.show_samples()
 
     def __getitem__(self, item_index):
+    
+    
+        #ex_inde = [54647, 28002, 56011, 38259, 71164, 74194,  6807, 889, 76607]
+        
+        #if item_index in ex_inde:
+        #    return
+
         data_item = copy.deepcopy(self.data[item_index])
         if self.model_input_type == 'single_frame':
             return self._get_single_frame(data_item)
         elif self.model_input_type == 'spatiotemporal_window':
-            return self._get_spatiotemporal_window(data_item)
+            return self._get_spatiotemporal_window(data_item,item_index)
 
-    def _get_spatiotemporal_window(self, data_item):
+    def _get_spatiotemporal_window(self, data_item,item_index):
         filename = data_item['filename']
         img_num = data_item['imgnum']
         image_file_path = data_item['image']
@@ -264,7 +271,7 @@ class PoseTrack(VideoDataset):
             'margin_right': margin_right,
         }
 
-        return input_x, input_prev, input_next, target_heatmaps, target_heatmaps_weight, meta
+        return input_x, input_prev, input_next, target_heatmaps, target_heatmaps_weight, meta, item_index
 
     def _get_single_frame(self, data_item):
         raise NotImplementedError

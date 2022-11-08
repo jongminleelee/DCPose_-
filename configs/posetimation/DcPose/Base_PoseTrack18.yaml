@@ -1,5 +1,5 @@
-WORKERS: 6
-PRINT_FREQ: 100
+WORKERS: 16
+PRINT_FREQ: 50
 DISTANCE: 2
 
 DATASET:
@@ -20,8 +20,9 @@ MODEL:
   INIT_WEIGHTS: true
 
   NUM_JOINTS: 17
-  PRETRAINED: './DcPose_supp_files/pretrained_models/pretrained_.pth'
+#  PRETRAINED: './DcPose_supp_files/pretrained_models/pretrained_.pth'
 #  PRETRAINED: './DcPose_supp_files/pretrained_models/pretrained_coco_model.pth'
+  PRETRAINED: "/home/jongmin2/DCPose_origin/pretrained_posetrack_stage4.pth"
   TARGET_TYPE: gaussian
   IMAGE_SIZE:
     - 288
@@ -93,9 +94,9 @@ TRAIN:
   SCALE_FACTOR: [ 0.35,0.35 ]
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 20
+  END_EPOCH: 40
   OPTIMIZER: adam
-  LR: 0.0001
+  LR: 0.00001
   LR_FACTOR: 0.1
   MILESTONES:
     - 4

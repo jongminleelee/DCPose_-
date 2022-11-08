@@ -55,6 +55,10 @@ class CommonFunction(BaseFunction):
         data_time = AverageMeter()
         losses = AverageMeter()
         acc = AverageMeter()
+        acc2 = AverageMeter()
+        
+        total_acc_high_index = np.array([])
+        
         # switch to train mode
         model.train()
 
@@ -63,7 +67,7 @@ class CommonFunction(BaseFunction):
         end = time.time()
 
         for iter_step in range(self.max_iter_num):
-            input_x, input_sup_A, input_sup_B, target_heatmaps, target_heatmaps_weight, meta = next(self.dataloader_iter)
+            input_x, input_sup_A, input_sup_B, target_heatmaps, target_heatmaps_weight, meta,item_index = next(self.dataloader_iter)
             self._before_train_iter(input_x)
 
             data_time.update(time.time() - end)
@@ -83,9 +87,10 @@ class CommonFunction(BaseFunction):
 
             if isinstance(outputs, list) or isinstance(outputs, tuple):
                 pred_heatmaps = outputs[0]
+                rough_heatmaps = outputs[1]
                 loss = self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
-                for pred_heatmaps in outputs[1:]:
-                    loss += self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
+                #for pred_heatmaps in outputs[1:]:
+                #    loss += self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
             else:
                 pred_heatmaps = outputs
                 loss = self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
@@ -98,8 +103,18 @@ class CommonFunction(BaseFunction):
             # measure accuracy and record loss
             losses.update(loss.item(), input_x.size(0))
 
-            _, avg_acc, cnt, _ = accuracy(pred_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
+            _, avg_acc, cnt, _, acc_per_image = accuracy(pred_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
             acc.update(avg_acc, cnt)
+            
+            item_index_np = item_index.detach().cpu().numpy()
+            acc_high_index = item_index_np[acc_per_image>0.88]
+            
+            total_acc_high_index = np.append(total_acc_high_index,acc_high_index)
+            print(total_acc_high_index)
+            #print(total_acc_high_index)
+            
+            #_, avg_acc2, cnt2, _ = accuracy(rough_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
+            #acc2.update(avg_acc2, cnt2)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -111,9 +126,10 @@ class CommonFunction(BaseFunction):
                       'Speed {speed:.1f} samples/s\t' \
                       'Data {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
                       'Loss {loss.val:.5f} ({loss.avg:.5f})\t' \
-                      'Accuracy {acc.val:.3f} ({acc.avg:.3f})\t'.format(epoch, iter_step, self.max_iter_num, batch_time=batch_time,
+                      'Accuracy {acc.val:.3f} ({acc.avg:.3f})\t'\
+                      'rough_current_acc {acc2.val:.3f} ({acc2.avg:.3f})\t'.format(epoch, iter_step, self.max_iter_num, batch_time=batch_time,
                                                                         speed=input_x.size(0) / batch_time.val,
-                                                                        data_time=data_time, loss=losses, acc=acc)
+                                                                        data_time=data_time, loss=losses, acc=acc, acc2=acc2)
 
                 logger.info(msg)
 
@@ -190,7 +206,7 @@ class CommonFunction(BaseFunction):
                         self._running_val_iter(vis_dict=vis_dict, model_input=[input_x, input_sup_A, input_sup_B])
 
                 if isinstance(outputs, list) or isinstance(outputs, tuple):
-                    pred_heatmaps = outputs[-1]
+                    pred_heatmaps = outputs[0]
                 else:
                     pred_heatmaps = outputs
 

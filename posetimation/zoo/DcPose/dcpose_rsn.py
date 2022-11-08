@@ -213,7 +213,7 @@ class DcPose_RSN(BaseModel):
         if not self.freeze_hrnet_weights:
             return current_rough_heatmaps, output_heatmaps
         else:
-            return output_heatmaps
+            return output_heatmaps, current_rough_heatmaps
 
     def init_weights(self):
         logger = logging.getLogger(__name__)
@@ -259,6 +259,20 @@ class DcPose_RSN(BaseModel):
                     if name in ['weights']:
                         nn.init.normal_(module.weight, std=0.001)
 
+        ## ===============================================================
+        ## 앞 과정은 정확하게 말하면 weight값이 없을 때, 초기화가 되는 과정이다. 
+        ## 아래 과정을 통해서.... 
+
+        # name = layer name !! 
+        # _ = weight value !!  -> param.shape ,  param.requires_grad
+        parameters_names = set()
+        for name, _ in self.named_parameters():
+            parameters_names.add(name)
+
+        buffers_names = set()
+        for name, _ in self.named_buffers():
+            buffers_names.add(name)
+
         if os.path.isfile(self.pretrained):
             pretrained_state_dict = torch.load(self.pretrained)
             if 'state_dict' in pretrained_state_dict.keys():
@@ -267,18 +281,27 @@ class DcPose_RSN(BaseModel):
 
             need_init_state_dict = {}
             for name, m in pretrained_state_dict.items():
-                if name.split('.')[0] in self.pretrained_layers \
-                        or self.pretrained_layers[0] is '*':
+                
+                # self.pretrained_layers => * 이 정의되어 있음.!!
+                if name.split('.')[0] in self.pretrained_layers or self.pretrained_layers[0] is '*':
                     layer_name = name.split('.')[0]
                     if layer_name in rough_pose_estimation_name_set:
                         need_init_state_dict[name] = m
                     else:
                         # 为了适应原本hrnet得预训练网络
+                        # 이 과정이 있는 이유는 ... coco로 학습된 pretrained 모델을 불러오기 때문에 
+                        # 해당 과정에서 layer이름에 rough_pose_estimation_net가 앞에 더 붙게 된다. 
+                        # 즉 이 부분을 보완하기 위해 작업이 된 것이라고 보면 좋다. 
                         new_layer_name = "rough_pose_estimation_net.{}".format(layer_name)
                         if new_layer_name in rough_pose_estimation_name_set:
                             parameter_name = "rough_pose_estimation_net.{}".format(name)
                             need_init_state_dict[parameter_name] = m
-            # TODO pretrained from posewarper not test
+                            
+                # if name.split('.')[0] in self.pretrained_layers or self.pretrained_layers[0] is '*':
+                if name in parameters_names or name in buffers_names:
+                        # logger.info('=> init {} from {}'.format(name, pretrained))
+                        print('=> init {}'.format(name))
+                        need_init_state_dict[name] = m  
             self.load_state_dict(need_init_state_dict, strict=False)
         elif self.pretrained:
             logger.error('=> please download pre-trained models first!')

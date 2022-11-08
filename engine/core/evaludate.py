@@ -162,6 +162,8 @@ def accuracy(output, target, hm_type='gaussian', thr=0.5):
     followed by individual accuracies
     '''
     idx = list(range(output.shape[1]))
+    
+    
     norm = 1.0
     if hm_type == 'gaussian':
         pred, _ = get_max_preds(output)
@@ -172,6 +174,9 @@ def accuracy(output, target, hm_type='gaussian', thr=0.5):
     dists = calc_dists(pred, target, norm)  # use a fixed length as a measure rather than the length of body parts
 
     acc = np.zeros((len(idx) + 1))
+    
+
+    
     avg_acc = 0
     cnt = 0
 
@@ -184,5 +189,15 @@ def accuracy(output, target, hm_type='gaussian', thr=0.5):
     avg_acc = avg_acc / cnt if cnt != 0 else 0
     if cnt != 0:
         acc[0] = avg_acc
+        
+    ### add code : jongmin
+    
+    # image 별 조인트 17개의 평균 
+    batch_idx = list(range(output.shape[0]))
+    acc_per_image = np.zeros((len(batch_idx)))    
+    
+    for i in range(len(batch_idx)):
+        acc_per_image[i] = dist_acc(dists[:,i], thr)        
 
-    return acc, avg_acc, cnt, pred
+    return acc, avg_acc, cnt, pred, acc_per_image
+

@@ -1,3 +1,5 @@
 /demo/input/
 /demo/output/
+/pretrained_posetrack_stage4.pth
+/output
 .idea
