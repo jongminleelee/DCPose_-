@@ -2,4 +2,7 @@
 /demo/output/
 /pretrained_posetrack_stage4.pth
 /output
+/output_hrnet
+/output_only_hrnet
+/epoch_1_state_800128.pth
 .idea

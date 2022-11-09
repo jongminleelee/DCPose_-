@@ -61,6 +61,12 @@ class PoseTrack(VideoDataset):
         self.json_dir = cfg.DATASET.JSON_DIR
         self.test_on_train = cfg.DATASET.TEST_ON_TRAIN
         self.json_file = cfg.DATASET.JSON_FILE
+        
+        # jongmin add code
+        self.low_index = np.load("/home/jongmin2/DCPose_origin/tools/low_acc_index_90_epoch1.npy")
+        np.random.shuffle(self.low_index)
+        self.low_index_len = self.low_index.size
+        print("low_index_len : {}=====================================".format(self.low_index_len))
 
         if self.phase != TRAIN_PHASE:
             self.img_dir = cfg.DATASET.TEST_IMG_DIR
@@ -94,6 +100,17 @@ class PoseTrack(VideoDataset):
 
     def __getitem__(self, item_index):
     
+        #if item_index in self.ex_index.tolist():
+        #      print("change")
+        #      item_index = 600
+        
+        if self.train:
+            uniform_index = item_index%(self.low_index_len-1)
+            item_index = int(self.low_index[uniform_index])
+            #print("change index =======")
+        #item_index = int(random.choice(self.ex_index))
+        
+        #item_index = 77714
     
         #ex_inde = [54647, 28002, 56011, 38259, 71164, 74194,  6807, 889, 76607]
         
@@ -201,6 +218,7 @@ class PoseTrack(VideoDataset):
         score = data_item['score'] if 'score' in data_item else 1
         r = 0
 
+        
         if self.is_train:
             if (np.sum(joints_vis[:, 0]) > self.num_joints_half_body and np.random.rand() < self.prob_half_body):
                 c_half_body, s_half_body = half_body_transform(joints, joints_vis, self.num_joints, self.upper_body_ids, self.aspect_ratio,
@@ -224,7 +242,7 @@ class PoseTrack(VideoDataset):
                 joints, joints_vis = fliplr_joints(
                     joints, joints_vis, data_numpy.shape[1], self.flip_pairs)
                 center[0] = data_numpy.shape[1] - center[0] - 1
-
+        
         # calculate transform matrix
         trans = get_affine_transform(center, scale, r, self.image_size)
         input_x = cv2.warpAffine(data_numpy, trans, (int(self.image_size[0]), int(self.image_size[1])), flags=cv2.INTER_LINEAR)

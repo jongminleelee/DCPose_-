@@ -79,7 +79,7 @@ class DcPose_RSN(BaseModel):
         self.logger.info(hyper_parameters)
 
         assert self.use_prf and self.use_ptm and self.use_pcn and self.use_margin and self.use_margin and self.use_group
-
+        '''
         ####### PRF #######
         diff_temporal_fuse_input_channels = self.num_joints * 4
         self.diff_temporal_fuse = CHAIN_RSB_BLOCKS(diff_temporal_fuse_input_channels, prf_inner_ch, prf_basicblock_num,
@@ -120,6 +120,7 @@ class DcPose_RSN(BaseModel):
         self.offsets_list = nn.ModuleList(self.offsets_list)
         self.masks_list = nn.ModuleList(self.masks_list)
         self.modulated_deform_conv_list = nn.ModuleList(self.modulated_deform_conv_list)
+        '''
 
     def _offset_conv(self, nc, kh, kw, dd, dg):
         conv = nn.Conv2d(nc, dg * 2 * kh * kw, kernel_size=(3, 3), stride=(1, 1), dilation=(dd, dd), padding=(1 * dd, 1 * dd), bias=False)
@@ -149,7 +150,7 @@ class DcPose_RSN(BaseModel):
 
         # rough heatmaps in sequence frames
         current_rough_heatmaps, previous_rough_heatmaps, next_rough_heatmaps = rough_heatmaps.split(true_batch_size, dim=0)
-
+        '''
         # Difference A and Difference B
         diff_A = current_rough_heatmaps - previous_rough_heatmaps
         diff_B = current_rough_heatmaps - next_rough_heatmaps
@@ -214,7 +215,9 @@ class DcPose_RSN(BaseModel):
             return current_rough_heatmaps, output_heatmaps
         else:
             return output_heatmaps, current_rough_heatmaps
-
+        '''
+        return current_rough_heatmaps
+        
     def init_weights(self):
         logger = logging.getLogger(__name__)
         ## init_weights
@@ -308,8 +311,8 @@ class DcPose_RSN(BaseModel):
             raise ValueError('{} is not exist!'.format(self.pretrained))
 
         # rough_pose_estimation
-        if self.freeze_hrnet_weights:
-            self.rough_pose_estimation_net.freeze_weight()
+        #if self.freeze_hrnet_weights:
+        #    self.rough_pose_estimation_net.freeze_weight()
 
     @classmethod
     def get_model_hyper_parameters(cls, args, cfg):

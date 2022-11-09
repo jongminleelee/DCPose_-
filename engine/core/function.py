@@ -57,7 +57,11 @@ class CommonFunction(BaseFunction):
         acc = AverageMeter()
         acc2 = AverageMeter()
         
-        total_acc_high_index = np.array([])
+        total_acc_low_index_90 = np.array([])
+        total_acc_low_index_88 = np.array([])
+        total_acc_low_index_85 = np.array([])
+
+        
         
         # switch to train mode
         model.train()
@@ -68,6 +72,9 @@ class CommonFunction(BaseFunction):
 
         for iter_step in range(self.max_iter_num):
             input_x, input_sup_A, input_sup_B, target_heatmaps, target_heatmaps_weight, meta,item_index = next(self.dataloader_iter)
+            
+
+            
             self._before_train_iter(input_x)
 
             data_time.update(time.time() - end)
@@ -87,7 +94,7 @@ class CommonFunction(BaseFunction):
 
             if isinstance(outputs, list) or isinstance(outputs, tuple):
                 pred_heatmaps = outputs[0]
-                rough_heatmaps = outputs[1]
+                #rough_heatmaps = outputs[1]
                 loss = self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
                 #for pred_heatmaps in outputs[1:]:
                 #    loss += self.criterion(pred_heatmaps, target_heatmaps, target_heatmaps_weight)
@@ -106,12 +113,19 @@ class CommonFunction(BaseFunction):
             _, avg_acc, cnt, _, acc_per_image = accuracy(pred_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
             acc.update(avg_acc, cnt)
             
-            item_index_np = item_index.detach().cpu().numpy()
-            acc_high_index = item_index_np[acc_per_image>0.88]
+            #print(acc_per_image)
+            #print(item_index)
+            #item_index_np = item_index.detach().cpu().numpy()
+            #acc_low_index_90 = item_index_np[acc_per_image<0.90]
+            #total_acc_low_index_90 = np.append(total_acc_low_index_90,acc_low_index_90)
             
-            total_acc_high_index = np.append(total_acc_high_index,acc_high_index)
-            print(total_acc_high_index)
-            #print(total_acc_high_index)
+            #acc_low_index_88 = item_index_np[acc_per_image<0.88]
+            #total_acc_low_index_88 = np.append(total_acc_low_index_88,acc_low_index_88)
+            
+            #acc_low_index_85 = item_index_np[acc_per_image<0.85]
+            #total_acc_low_index_85 = np.append(total_acc_low_index_85,acc_low_index_85)
+            
+
             
             #_, avg_acc2, cnt2, _ = accuracy(rough_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
             #acc2.update(avg_acc2, cnt2)
@@ -120,6 +134,11 @@ class CommonFunction(BaseFunction):
             batch_time.update(time.time() - end)
             end = time.time()
             if iter_step % self.cfg.PRINT_FREQ == 0 or iter_step >= self.max_iter_num - 1:
+
+                #if iter_step % 1000==0:
+                #    np.save('low_acc_index_90_'+str(iter_step)+'.npy', total_acc_low_index_90)
+                #    np.save('low_acc_index_88_'+str(iter_step)+'.npy', total_acc_low_index_88)
+                #    np.save('low_acc_index_85_'+str(iter_step)+'.npy', total_acc_low_index_85)
 
                 msg = 'Epoch: [{0}][{1}/{2}]\t' \
                       'Time {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
@@ -137,7 +156,10 @@ class CommonFunction(BaseFunction):
             self.tb_writer.add_scalar('train_loss', losses.val, self.global_steps)
             self.tb_writer.add_scalar('train_acc', acc.val, self.global_steps)
             self.global_steps += 1
-
+            
+        #np.save('low_acc_index_90_epoch1.npy', total_acc_low_index_90)
+        #np.save('low_acc_index_88_epoch1.npy', total_acc_low_index_88)
+        #np.save('low_acc_index_85_epoch1.npy', total_acc_low_index_85)
         tb_writer_dict["global_steps"] = self.global_steps
 
     def eval(self, model, dataloader, tb_writer_dict, **kwargs):
@@ -178,7 +200,7 @@ class CommonFunction(BaseFunction):
             end = time.time()
             num_batch = len(dataloader)
             for iter_step in range(self.max_iter_num):
-                input_x, input_sup_A, input_sup_B, target_heatmaps, target_heatmaps_weight, meta = next(self.dataloader_iter)
+                input_x, input_sup_A, input_sup_B, target_heatmaps, target_heatmaps_weight, meta,item_index = next(self.dataloader_iter)
                 if phase == VAL_PHASE:
                     self._before_val_iter(input_x)
 
@@ -211,7 +233,7 @@ class CommonFunction(BaseFunction):
                     pred_heatmaps = outputs
 
 
-                _, avg_acc, cnt, _ = accuracy(pred_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
+                _, avg_acc, cnt, _,_= accuracy(pred_heatmaps.detach().cpu().numpy(), target_heatmaps.detach().cpu().numpy())
 
                 acc.update(avg_acc, cnt)
 
